@@ -40,9 +40,59 @@ namespace Organized
 
             if (dataReader.HasRows)
             {
+                dataReader.Close();
+
+                
+
                 return true;
             }
             else
+            {
+                return false;
+            }
+        }
+
+        private bool VerifyUsers(String username, String password)
+        {
+            try
+            {
+                conn.Open();
+                int user_id = -1;
+                using(var trans = conn.BeginTransaction())
+                {
+                    try
+                    {
+                        using(var comm = conn.CreateCommand())
+                        {
+                            comm.Transaction = trans;
+                            comm.CommandText = "SELECT CAST(User_ID as int) as 'User_ID' from Credentials WHERE Username='" + username + "' AND Password='" + password + "'";
+                            user_id = (int)comm.ExecuteScalar();
+
+                            if (user_id > 0)
+                            {
+                                comm.CommandText = "SELECT FirstName as 'firstname', LastName as 'lastname', EmailAddress as 'email' FROM [dbo].[User] WHERE ID = '" + user_id + "'";
+                                dataReader = comm.ExecuteReader();
+
+                                while (dataReader.Read())
+                                {
+                                    User user = new User((string)dataReader["firstname"], (string)dataReader["lastname"], username, (string)dataReader["email"], user_id);
+                                    App.Current.Properties["Current_User"] = user;
+                                }
+                                dataReader.Close();
+                                conn.Close();
+                                return true;
+                            }
+                            else
+                            {
+                                return false;
+                            }
+                        }
+                    }catch(Exception e)
+                    {
+                        return false;
+                    }
+                }
+            }catch (Exception e)
             {
                 return false;
             }
@@ -67,9 +117,13 @@ namespace Organized
             {
                 conn.Close();
             }
-            if(VerifyUser(UsernameTextBox.Text, PasswordTextBox.Password))
+            if(VerifyUsers(UsernameTextBox.Text, PasswordTextBox.Password))
             {
-                MessageBox.Show("Login Successful", "Congratulations", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                Dashboard dashboard = new Dashboard();  
+                dashboard.Show();   
+                this.Close();
+                //MessageBox.Show("Login Successful", "Congratulations", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             else
             {

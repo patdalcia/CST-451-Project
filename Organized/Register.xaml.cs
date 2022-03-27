@@ -62,7 +62,9 @@ namespace Organized
             {
                 if (RegisterNewUser(FirstNameTextBox.Text, LastNameTextBox.Text, UsernameTextBox.Text, PasswordTextBox.Password, EmailTextBox.Text))
                 {
-                    MessageBox.Show("Registration Successful", "Congratulations", MessageBoxButton.OK, MessageBoxImage.Information);
+                    Dashboard dashboard = new Dashboard();
+                    dashboard.Show();
+                    this.Close();
                 }
                 else
                 {
@@ -98,18 +100,25 @@ namespace Organized
                             comm.CommandText = "INSERT INTO [dbo].[Credentials] ([Username], [Password], [User_ID]) VALUES('" + Username + "', '" + Password + "', '" + user_id + "')";
                             comm.ExecuteNonQuery();
                         }
+                        //Creating user object and making it globally accessible
+                        User user = new User(Firstname, Lastname, Username, EmailAddress, user_id);
+                        App.Current.Properties["Current_User"] = user;
+
                         trans.Commit();
+                        conn.Close();
                         return true;
                     }
                     catch(Exception e)
                     {
                         trans.Rollback();
+                        conn.Close();
                         return false;
                     }
                 }
             }
             catch(Exception e) 
             {
+                conn.Close();
                 return false;
             }
 
@@ -131,20 +140,26 @@ namespace Organized
                             dataReader = comm.ExecuteReader();
                             if (dataReader.HasRows)
                             {
+                                dataReader.Close();
+                                conn.Close();
                                 return false;
                             }
                             else
                             {
+                                dataReader.Close();
+                                conn.Close();
                                 return true;
                             }
                         }
                     }catch(Exception e)
                     {
+                        conn.Close();
                         return false;
                     }
                 }
             }catch(Exception e)
             {
+                conn.Close();
                 return false;
             }
         }
